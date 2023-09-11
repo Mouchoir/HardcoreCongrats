@@ -1,0 +1,12 @@
+## Interface: 51146
+## Title: Hardcore Congrats
+## Version: 1.0
+## Author: Mouchoir
+## Notes: Automatically congratulate Hardcore players reaching level 60.
+
+# Localization files
+Localization\enUS.lua
+Localization\frFR.lua
+# Insert additional localization files above this line
+
+HardcoreCongrats.lua
