@@ -109,11 +109,13 @@ localizationNoteLabel:SetText(HardcoreCongratsLocalization[GetLocale()]["Localiz
 
 local function getCongratsMessage()
     if randomCheckbox:GetChecked() then
-        return congratsMessages[math.random(1, #congratsMessages)]
+        selectedMessage = congratsMessages[math.random(1, #congratsMessages)]
+        return selectedMessage
     else
         return selectedMessage
     end
 end
+
 
 
 local function updateButtonAndNameLabelVisibility() --Handles "Congratulate and player labed visibility
@@ -122,8 +124,8 @@ local function updateButtonAndNameLabelVisibility() --Handles "Congratulate and 
         playerNameLabel:SetText(lastPlayer)  -- Set the name text
         playerNameLabel:Show()  -- Explicitly show the name label again
         button:Show()
+        DEFAULT_CHAT_FRAME:AddMessage("UI updated with player " .. lastPlayer .. " at " .. time())--DEBUG
     else
-        lastPlayer = nil  -- Reset lastPlayer
         playerNameLabel:SetText("")  -- Clear the name text
         button:Hide()
         playerNameLabel:Hide()  -- Hide the name label
@@ -131,88 +133,60 @@ local function updateButtonAndNameLabelVisibility() --Handles "Congratulate and 
 end
 
 
-local function prunependingPlayers()
+local function prunePendingPlayers()
     local currentTime = time()
     for i = #pendingPlayers, 1, -1 do -- Looping backwards to safely remove elements
         local playerInfo = pendingPlayers[i]
         if currentTime - playerInfo.timestamp > HardcoreCongratsDB.memoryDuration then
-            DEFAULT_CHAT_FRAME:AddMessage("Player " .. playerInfo.name .. " has been removed from the list due to time exceeding.")
+            DEFAULT_CHAT_FRAME:AddMessage("Player " .. playerInfo.name .. " has been removed from the list due to time exceeding.")--DEBUG
             table.remove(pendingPlayers, i)
         end
     end
-    updateButtonAndNameLabelVisibility()
 end
 
-
-
 local function sendCongratulation(playerName)
-    local playerIndexToRemove
-    for index, playerInfo in ipairs(pendingPlayers) do
-        if playerInfo.name == playerName then
-            playerIndexToRemove = index
-            break
-        end
-    end
+    DEFAULT_CHAT_FRAME:AddMessage("Random checkbox is checked: " .. tostring(randomCheckbox:GetChecked())) --DEBUG
     
     local message = getCongratsMessage()
     SendChatMessage(message, "WHISPER", nil, playerName)
-    
-    -- Remove the player from the list after congratulating them
-    if playerIndexToRemove then
-        table.remove(pendingPlayers, playerIndexToRemove)
-        DEFAULT_CHAT_FRAME:AddMessage("Player " .. playerName .. " has been congratulated and removed from the list.")
-    end
-    
-    -- Check if there's another player to congratulate
-    updateButtonAndNameLabelVisibility()
-    prunependingPlayers()
+
 end
 
 
 
 local function onEvent(self, event, msg)
     -- DEBUG: Print the received server message
-    DEFAULT_CHAT_FRAME:AddMessage("Received server message: " .. msg)
-    -- END TEST BUTTON LOGIC
+    DEFAULT_CHAT_FRAME:AddMessage("Received server message: " .. msg)--DEBUG
 
-    local localeMessage = HardcoreCongratsLocalization[GetLocale()].alert -- Replace non-breaking spaces with regular spaces
+    local localeMessage = HardcoreCongratsLocalization[GetLocale()].alert
     local playerName = string.match(msg, localeMessage)
 
     if playerName then
          -- DEBUG: Print the extracted player name
-         DEFAULT_CHAT_FRAME:AddMessage("Extracted Player Name: " .. playerName)
-        -- END TEST BUTTON LOGIC
-
-        local playerExists = false
-        for _, playerInfo in ipairs(pendingPlayers) do
-            if playerInfo.name == playerName then
-                playerInfo.congratulated = true
-                playerExists = true
-                break
-            end
-        end
+        DEFAULT_CHAT_FRAME:AddMessage("Extracted Player Name: " .. playerName)--DEBUG
         
-        if not playerExists then
-            table.insert(pendingPlayers, {name = playerName, timestamp = time(), congratulated = false})
-            updateButtonAndNameLabelVisibility()
-        end        
-        
+        table.insert(pendingPlayers, {name = playerName, timestamp = time(), congratulated = false})
         updateButtonAndNameLabelVisibility()
+        DEFAULT_CHAT_FRAME:AddMessage("Player " .. playerName .. " added to the list at " .. time())--DEBUG        
         
     else
          -- DEBUG: If player extraction failed, print a debug message
-         DEFAULT_CHAT_FRAME:AddMessage("Failed to extract player name from server message.")
-        lastPlayer = playerName
+        DEFAULT_CHAT_FRAME:AddMessage("Failed to extract player name from server message.")
         if msg == HardcoreCongratsDB.serverMessage then
-            button:Show()
             localeOutput:SetText(msg)  -- Update the EditBox with the extracted server message
             HardcoreCongratsDB.serverMessage = msg;  -- Save the server message
         else
             localeOutput:SetText("Awaiting for someone to reach level 60...")
         end
-        playerNameLabel:Hide()  -- Hide the name label when the button is hidden
+    end
+
+    -- Display all registered player names (DEBUG)
+    DEFAULT_CHAT_FRAME:AddMessage("Liste des pseudos enregistrés:")
+    for _, playerInfo in ipairs(pendingPlayers) do
+        DEFAULT_CHAT_FRAME:AddMessage(playerInfo.name)
     end
 end
+
 
 -- Button to send the congratulation									
 button = CreateFrame("Button", "HardcoreCongratsButton", UIParent, "UIPanelButtonTemplate")
@@ -224,6 +198,12 @@ button:SetScript("OnClick", function()
     if #pendingPlayers > 0 then
         lastPlayer = pendingPlayers[#pendingPlayers].name
         sendCongratulation(lastPlayer)
+        DEFAULT_CHAT_FRAME:AddMessage("Congratulation button clicked")--DEBUG
+        DEFAULT_CHAT_FRAME:AddMessage("Sent message :" .. selectedMessage)--DEBUG
+        -- Remove the player from the list after congratulating them
+        table.remove(pendingPlayers)
+        DEFAULT_CHAT_FRAME:AddMessage("Player " .. lastPlayer .. " has been congratulated and removed from the list.")--DEBUG
+        updateButtonAndNameLabelVisibility()
     end
 end)
 
@@ -269,6 +249,7 @@ for i, message in ipairs(congratsMessages) do
             uncheckAllExcept(i, true) -- Also uncheck the randomCheckbox
             HardcoreCongratsDB.selectedMessageIndex = i
         end
+        HardcoreCongratsDB.isRandom = false
     end)
     
     -- Check the checkbox for "GG!" by default
@@ -276,6 +257,7 @@ for i, message in ipairs(congratsMessages) do
         checkbox:SetChecked(true)
     end
 end
+
 
 randomCheckbox:SetScript("OnClick", function(self)
     if self:GetChecked() then
@@ -289,6 +271,7 @@ randomCheckbox:SetScript("OnClick", function(self)
     HardcoreCongratsDB.isRandom = self:GetChecked()
 end)
 
+
 -- Set the checkbox state based on the saved setting
 _G["HardcoreCongratsCheckbox" .. HardcoreCongratsDB.selectedMessageIndex]:SetChecked(true)
 randomCheckbox:SetChecked(HardcoreCongratsDB.isRandom)
@@ -301,24 +284,23 @@ panel:SetScript("OnShow", function()
     detectedLocaleValue:SetText(GetLocale())
     lastPlayerValue:SetText(lastPlayer or "None")
     
+    -- Update the checkboxes based on the saved state
     if HardcoreCongratsDB.isRandom then
-        -- If random is true, ensure all other checkboxes are unchecked
+        randomCheckbox:SetChecked(true)
         for i = 1, #congratsMessages do
             local checkbox = _G["HardcoreCongratsCheckbox" .. i]
             if checkbox then
-                checkbox:SetChecked(false)
+                checkbox:SetChecked(false) -- Uncheck all message checkboxes if random is selected
             end
         end
-        randomCheckbox:SetChecked(true)
     else
-        -- Otherwise, only check the checkbox corresponding to the saved message index
+        randomCheckbox:SetChecked(false)
         for i = 1, #congratsMessages do
             local checkbox = _G["HardcoreCongratsCheckbox" .. i]
             if checkbox then
                 checkbox:SetChecked(i == HardcoreCongratsDB.selectedMessageIndex)
             end
         end
-        randomCheckbox:SetChecked(false)
     end
     
     -- Update the EditBox text based on the saved server message
@@ -331,9 +313,9 @@ end)
 local function getRandomPlayer()
     -- Returns a random player name								  
     local names = {
-        "Aeloria", "Bromli", "Thandrel", "Elowynn", "Kordric", 
-        "Maelis", "Talindra", "Gromlor", "Laelith", "Nordran", 
-        "Vaelora", "Thordric", "Elandra", "Rhalgar", "Lorinell"
+        "Aelzaeoria", "Bromazeali", "Thandazeazearel", "Elowazeazynn", "Kazeazordric", 
+        "Maeazeazlis", "Taazelindra", "Gaazeromlor", "Laelazeith", "Nordazeran", 
+        "Vaelazeora", "Thoazerdric", "Elaazendra", "Rhalgazear", "Loriazenell"
     }
     return names[math.random(#names)]
 end
@@ -363,11 +345,32 @@ backdropFrame:SetPoint("BOTTOM", button, "TOP", 0, 5)  -- Position it above the 
 -- Position the playerNameLabel on top of this frame
 playerNameLabel:SetPoint("CENTER", backdropFrame, "CENTER")
 
+local function getUniqueRandomPlayer()
+
+  local playerName = getRandomPlayer()
+  
+  while contains(pendingPlayers, playerName) do
+    playerName = getRandomPlayer()
+  end
+
+  return playerName
+
+end
+
+function contains(table, value)
+    for _, v in ipairs(table) do
+      if v.name == value then 
+        return true
+      end
+    end
+    
+    return false
+  end
 
 testButton:SetScript("OnClick", function()
     -- Get random player name                            
-    local playerName = getRandomPlayer()
-
+    local playerName = getUniqueRandomPlayer()
+    DEFAULT_CHAT_FRAME:AddMessage("Test button clicked")--DEBUG
     -- Format mock event based on the locale
     local testEvent
     if GetLocale() == "frFR" then
@@ -379,11 +382,6 @@ testButton:SetScript("OnClick", function()
     -- Trigger onEvent() with mock event                                       
     onEvent(nil, nil, testEvent)
 
-    -- Display all registered player names
-    DEFAULT_CHAT_FRAME:AddMessage("Liste des pseudos enregistrés:")
-    for _, playerInfo in ipairs(pendingPlayers) do
-        DEFAULT_CHAT_FRAME:AddMessage(playerInfo.name)
-    end
 end)
 
 -- Register for the chat message event									  
@@ -391,9 +389,13 @@ local f = CreateFrame("Frame")
 f:RegisterEvent("CHAT_MSG_SYSTEM")
 f:SetScript("OnEvent", onEvent)
 
--- Call prunependingPlayers periodically, e.g., every 10 seconds
-C_Timer.NewTicker(10, prunependingPlayers)
 -- END OF TEST BUTTON LOGIC
+
+-- Call prunePendingPlayers periodically, e.g., every 10 seconds
+C_Timer.NewTicker(10, function()
+    prunePendingPlayers()
+    updateButtonAndNameLabelVisibility()
+end)
 
 -- START OF THE SLASH COMMAND
 -- Register a slash command
