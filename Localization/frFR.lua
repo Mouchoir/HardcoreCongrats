@@ -9,5 +9,6 @@ HardcoreCongratsLocalization["frFR"] = {
     ["Choose a congratulation message"] = "Choisissez un message de félicitations:",
     ["Pick one at random"] = "Choisissez-en un au hasard:",
 	["Event server message"] = "Message serveur",
-	["Awaiting for someone to reach level 60..."] = "En attente d'un niveau 60..."
+	["Awaiting for someone to reach level 60..."] = "En attente d'un niveau 60...",
+	["Localization Note"] = "Copiez/collez ceci pour créer votre propre fichier de localization car Blizzard utilise des caractères spéciaux tels que les non-breaking spaces. Remplacez le nom du personnage par (.-)"
 }

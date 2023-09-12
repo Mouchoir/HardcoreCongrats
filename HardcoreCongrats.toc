@@ -3,6 +3,7 @@
 ## Version: 1.0
 ## Author: Mouchoir
 ## Notes: Automatically congratulate Hardcore players reaching level 60.
+## SavedVariables: HardcoreCongratsDB
 
 # Localization files
 Localization\enUS.lua

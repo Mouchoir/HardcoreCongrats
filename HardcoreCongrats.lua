@@ -1,23 +1,26 @@
+-- Database
+if not HardcoreCongratsDB then
+    HardcoreCongratsDB = {
+    selectedMessageIndex = 1,  -- Default to the first message
+    isRandom = false,          -- Default to not random
+    serverMessage = "Awaiting for someone to reach level 60..." -- Default server message
+}
+end
+
 local button
-local lastPlayer -- This variable will store the name of the last player to reach level 60
 local congratulatedPlayers = {} -- Store players that have already been congratulated
+local lastPlayer -- This variable will store the name of the last player to reach level 60
 
 -- List of congratulatory messages
 local congratsMessages = {
     "GG!",
     "Well done!",
-    "Yeeeah you're 60!",
+    "Yeah you're 60!!",
+	"w00t",
     "Another hero survived"
 }
 
 local selectedMessage = congratsMessages[1] -- Default to first "GG!"
-
--- TEST
-if HardcoreCongratsLocalization["frFR"] then
-    DEFAULT_CHAT_FRAME:AddMessage("French localization loaded.")
-else
-    DEFAULT_CHAT_FRAME:AddMessage("French localization NOT loaded.")
-end
 
 -- Configuration panel					  
 local panel = CreateFrame("Frame", "HardcoreCongratsConfigPanel", InterfaceOptionsFramePanelContainer)
@@ -56,13 +59,13 @@ randomCheckbox:SetPoint("TOPLEFT", randomTitle, "BOTTOMLEFT", 0, -15)
 randomCheckbox.tooltip = "Randomly pick a message"
 getglobal(randomCheckbox:GetName() .. 'Text'):SetText("Random")
 
-local randomTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-randomTitle:SetPoint("TOPLEFT", randomCheckbox, "BOTTOMLEFT", 0, -20)
-randomTitle:SetText(HardcoreCongratsLocalization[GetLocale()]["Event server message"] or "Event server message")
+local serverMessageTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+serverMessageTitle:SetPoint("TOPLEFT", randomCheckbox, "BOTTOMLEFT", 0, -20)
+serverMessageTitle:SetText(HardcoreCongratsLocalization[GetLocale()]["Event server message"] or "Event server message")
 
 --Create an InputBox
 local localeOutput = CreateFrame("EditBox", "HardcoreCongratsLocaleOutput", panel, "InputBoxTemplate")
-localeOutput:SetPoint("TOPLEFT", randomTitle, "BOTTOMLEFT", 0, -10)
+localeOutput:SetPoint("TOPLEFT", serverMessageTitle, "BOTTOMLEFT", 0, -10)
 localeOutput:SetSize(400, 100)
 localeOutput:SetMultiLine(true)
 localeOutput:SetAutoFocus(false)
@@ -70,6 +73,14 @@ localeOutput:SetText(HardcoreCongratsLocalization[GetLocale()]["Awaiting for som
 localeOutput:SetScript("OnEscapePressed", function(self)
     self:ClearFocus()
 end)
+
+-- Create FontString for Localization Note
+local localizationNoteLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+localizationNoteLabel:SetWidth(localeOutput:GetWidth())  -- Set width to match the width of the localeOutput textbox
+localizationNoteLabel:SetWordWrap(true)  -- Enable word wrapping
+localizationNoteLabel:SetJustifyH("LEFT")  -- Align text to the left
+localizationNoteLabel:SetPoint("TOPLEFT", localeOutput, "BOTTOMLEFT", 0, -20)
+localizationNoteLabel:SetText(HardcoreCongratsLocalization[GetLocale()]["Localization Note"] or "Copy/paste this to create the localization file in your own language since Blizzard sometimes uses special characters such as non-breakable spaces. Then replace the character's name with (.-).")
 
 -- Function to get a message							
 local function getCongratsMessage()
@@ -87,85 +98,34 @@ local function sendCongratulation(playerName)
         DEFAULT_CHAT_FRAME:AddMessage("You have already congratulated this player.")
         return
     end
-
     local message = getCongratsMessage()
     SendChatMessage(message, "WHISPER", nil, playerName)
     congratulatedPlayers[playerName] = true
-
-    -- Add the debug line here
-    DEFAULT_CHAT_FRAME:AddMessage("Sent message: \"" .. message .. "\" to " .. playerName)
 end
 
 
 -- Event handling function						  
 local function onEvent(self, event, msg)
-    DEFAULT_CHAT_FRAME:AddMessage("Event Triggered with message: " .. msg)  -- Debug message
-    DEFAULT_CHAT_FRAME:AddMessage("Message byte by byte:") -- TEST
-    for i = 1, #msg do -- TEST
-        DEFAULT_CHAT_FRAME:AddMessage(string.byte(msg, i)) -- TEST
-    end -- TEST
-    local directPlayerName = string.match(msg, "(.-) a atteint") -- TEST
-    DEFAULT_CHAT_FRAME:AddMessage("Direct Extracted Player Name: " .. (directPlayerName or "None detected")) -- TEST
-    local localeMessage = HardcoreCongratsLocalization[GetLocale()].alert:gsub(" ", " ")  -- both are non-breaking spaces
+    -- START TEST BUTTON LOGIC: This line is specifically for the test button and can be removed later.
+    DEFAULT_CHAT_FRAME:AddMessage("Received server message (Test Mode): " .. msg)
+    -- END TEST BUTTON LOGIC
 
-    DEFAULT_CHAT_FRAME:AddMessage("Locale Message: " .. (localeMessage or "None detected"))  -- Debug message
-    
+    local localeMessage = HardcoreCongratsLocalization[GetLocale()].alert:gsub(" ", " ")  -- both are non-breaking spaces    
     local playerName = string.match(msg, HardcoreCongratsLocalization[GetLocale()].alert)
-    DEFAULT_CHAT_FRAME:AddMessage("Extracted Player Name: " .. (playerName or "None detected"))  -- Debug message
-
     if playerName then
+        -- START TEST BUTTON LOGIC: This line is specifically for the test button and can be removed later.
+        DEFAULT_CHAT_FRAME:AddMessage("Extracted Player Name (Test Mode): " .. playerName)
+        -- END TEST BUTTON LOGIC
+
         lastPlayer = playerName
         button:Show()
         localeOutput:SetText(msg)  -- Update the EditBox with the extracted server message
+        HardcoreCongratsDB.serverMessage = msg;  -- Save the server message
     else
         localeOutput:SetText("Awaiting for someone to reach level 60...")  -- Reset to the placeholder text if not the expected message
     end
 end
 
-
---[[
-Test Button
-
-This code adds a simple test button to simulate level up events 
-for testing the congrats messaging.
-
-This allows the onEvent() handler to be fully set up before
-we start triggering test events.
-]]
-local testButton = CreateFrame("Button", nil, UIParent, "UIPanelButtonTemplate")
-testButton:SetSize(100, 30)
-testButton:SetPoint("TOPLEFT", 100, -100)
-testButton:SetText("TEST!") 
-
-local function getRandomPlayer()
--- Returns a random player name								  
-    local names = {
-    "Aeloria", "Bromli", "Thandrel", "Elowynn", "Kordric", 
-    "Maelis", "Talindra", "Gromlor", "Laelith", "Nordran", 
-    "Vaelora", "Thordric", "Elandra", "Rhalgar", "Lorinell"
-}
-
-    return names[math.random(#names)]
-end
-
-testButton:SetScript("OnClick", function()
-    -- Get random player name                            
-    local playerName = getRandomPlayer()
-
-    -- Format mock event based on the locale
-    local testEvent
-	if GetLocale() == "frFR" then
-		testEvent = string.format("%s a atteint le niveau 60 !", playerName)
-	else
-		testEvent = string.format("%s has reached level 60!", playerName)
-	end
-
-
-
-
-    -- Trigger onEvent() with mock event                                       
-    onEvent(nil, nil, testEvent)
-end)
 
 -- Button to send the congratulation									
 button = CreateFrame("Button", "HardcoreCongratsButton", UIParent, "UIPanelButtonTemplate")
@@ -186,8 +146,9 @@ local f = CreateFrame("Frame")
 f:RegisterEvent("CHAT_MSG_SYSTEM")
 f:SetScript("OnEvent", onEvent)
 
+
 -- Now, let's define the uncheckAllExcept function
-local function uncheckAllExcept(exceptIndex)
+local function uncheckAllExcept(exceptIndex, touchRandomCheckbox)
     for i = 1, #congratsMessages + 1 do
         if i ~= exceptIndex then
             local checkbox = _G["HardcoreCongratsCheckbox" .. i]
@@ -196,60 +157,127 @@ local function uncheckAllExcept(exceptIndex)
             end
         end
     end
+    if touchRandomCheckbox then
+        randomCheckbox:SetChecked(false)
+    end
 end
 
-local lastCheckbox
+-- Creating Checkboxes
 for i, message in ipairs(congratsMessages) do
     local checkbox = CreateFrame("CheckButton", "HardcoreCongratsCheckbox" .. i, panel, "ChatConfigCheckButtonTemplate")
     checkbox:SetPoint("TOPLEFT", messageTitle, "BOTTOMLEFT", 0, -19 * i)
     checkbox.tooltip = message
     getglobal(checkbox:GetName() .. 'Text'):SetText(message)
 
+    checkbox.wasChecked = false
+    checkbox:SetScript("OnMouseDown", function(self)
+        self.wasChecked = self:GetChecked()
+    end)
+    
+    checkbox:SetScript("OnClick", function(self)
+        if self.wasChecked then
+            self:SetChecked(false)
+            _G["HardcoreCongratsCheckbox1"]:SetChecked(true)
+            selectedMessage = congratsMessages[1]
+            HardcoreCongratsDB.selectedMessageIndex = 1
+        else
+            selectedMessage = congratsMessages[i]
+            uncheckAllExcept(i, true) -- Also uncheck the randomCheckbox
+            HardcoreCongratsDB.selectedMessageIndex = i
+        end
+    end)
+    
     -- Check the checkbox for "GG!" by default
     if i == 1 then
         checkbox:SetChecked(true)
     end
-
-    checkbox:SetScript("OnClick", function(self)
-        if self:GetChecked() then
-            -- Uncheck the checkbox for "GG!" if any other checkbox gets selected
-            if i ~= 1 then
-                _G["HardcoreCongratsCheckbox1"]:SetChecked(false)
-            end
-            selectedMessage = message
-            uncheckAllExcept(i)
-            randomCheckbox:SetChecked(false)
-        else
-            selectedMessage = congratsMessages[1]
-        end
-    end)
-    lastCheckbox = checkbox
 end
+
 
 
 randomCheckbox:SetScript("OnClick", function(self)
     if self:GetChecked() then
-        uncheckAllExcept(#congratsMessages + 1)
+        uncheckAllExcept(#congratsMessages + 1) -- Uncheck all the message checkboxes
     else
+        -- If user tries to uncheck the "Random" checkbox, recheck the "GG!" checkbox
         selectedMessage = congratsMessages[1]
+        _G["HardcoreCongratsCheckbox1"]:SetChecked(true)
+        HardcoreCongratsDB.selectedMessageIndex = 1
+    end
+    HardcoreCongratsDB.isRandom = self:GetChecked()
+end)
+
+
+
+-- Set the checkbox state based on the saved setting
+_G["HardcoreCongratsCheckbox" .. HardcoreCongratsDB.selectedMessageIndex]:SetChecked(true)
+randomCheckbox:SetChecked(HardcoreCongratsDB.isRandom)
+
+-- Set the EditBox text based on the saved server message
+localeOutput:SetText(HardcoreCongratsDB.serverMessage)
+
+panel:SetScript("OnShow", function()
+    -- Update locale values
+    detectedLocaleValue:SetText(GetLocale())
+    lastPlayerValue:SetText(lastPlayer or "None")
+    
+    if HardcoreCongratsDB.isRandom then
+        -- If random is true, ensure all other checkboxes are unchecked
         for i = 1, #congratsMessages do
             local checkbox = _G["HardcoreCongratsCheckbox" .. i]
             if checkbox then
                 checkbox:SetChecked(false)
             end
         end
+        randomCheckbox:SetChecked(true)
+    else
+        -- Otherwise, only check the checkbox corresponding to the saved message index
+        for i = 1, #congratsMessages do
+            local checkbox = _G["HardcoreCongratsCheckbox" .. i]
+            if checkbox then
+                checkbox:SetChecked(i == HardcoreCongratsDB.selectedMessageIndex)
+            end
+        end
+        randomCheckbox:SetChecked(false)
     end
+    
+    -- Update the EditBox text based on the saved server message
+    localeOutput:SetText(HardcoreCongratsDB.serverMessage or "Awaiting for someone to reach level 60...")
 end)
 
--- Printing the entire localization table
-for k, v in pairs(HardcoreCongratsLocalization) do --TEST
-    DEFAULT_CHAT_FRAME:AddMessage("Locale: " .. k)
-    for k2, v2 in pairs(v) do
-        DEFAULT_CHAT_FRAME:AddMessage("Key: " .. k2 .. ", Value: " .. v2)
-    end
+-- START OF TEST BUTTON LOGIC: This section is meant for testing and can be safely removed later.
+
+-- This is meant for the test button
+local function getRandomPlayer()
+    -- Returns a random player name								  
+    local names = {
+        "Aeloria", "Bromli", "Thandrel", "Elowynn", "Kordric", 
+        "Maelis", "Talindra", "Gromlor", "Laelith", "Nordran", 
+        "Vaelora", "Thordric", "Elandra", "Rhalgar", "Lorinell"
+    }
+    return names[math.random(#names)]
 end
 
-panel:SetScript("OnShow", function()
-    detectedLocaleValue:SetText(GetLocale())
-    lastPlayerValue:SetText(lastPlayer or "None")
+-- Test Button Creation
+local testButton = CreateFrame("Button", nil, UIParent, "UIPanelButtonTemplate")
+testButton:SetSize(100, 30)
+testButton:SetPoint("TOPLEFT", 100, -100)
+testButton:SetText("TEST!") 
+
+testButton:SetScript("OnClick", function()
+    -- Get random player name                            
+    local playerName = getRandomPlayer()
+
+    -- Format mock event based on the locale
+    local testEvent
+    if GetLocale() == "frFR" then
+        testEvent = string.format("%s a atteint le niveau 60 !", playerName)
+    else
+        testEvent = string.format("%s has reached level 60!", playerName)
+    end
+
+    -- Trigger onEvent() with mock event                                       
+    onEvent(nil, nil, testEvent)
 end)
+
+-- END OF TEST BUTTON LOGIC
