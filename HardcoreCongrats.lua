@@ -40,6 +40,8 @@ lastPlayerLabel:SetText(HardcoreCongratsLocalization[GetLocale()]["Last player t
 local lastPlayerValue = panel:CreateFontString("HardcoreCongratsConfigPanelLastPlayer", "ARTWORK", "GameFontWhite")
 lastPlayerValue:SetPoint("TOPLEFT", lastPlayerLabel, "BOTTOMLEFT", 0, -10)
 
+
+
 -- Add titles			 
 local messageTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 messageTitle:SetPoint("TOPLEFT", lastPlayerValue, "BOTTOMLEFT", 0, -20)
@@ -53,6 +55,21 @@ local randomCheckbox = CreateFrame("CheckButton", "HardcoreCongratsCheckboxRando
 randomCheckbox:SetPoint("TOPLEFT", randomTitle, "BOTTOMLEFT", 0, -15)
 randomCheckbox.tooltip = "Randomly pick a message"
 getglobal(randomCheckbox:GetName() .. 'Text'):SetText("Random")
+
+local randomTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+randomTitle:SetPoint("TOPLEFT", randomCheckbox, "BOTTOMLEFT", 0, -20)
+randomTitle:SetText(HardcoreCongratsLocalization[GetLocale()]["Event server message"] or "Event server message")
+
+--Create an InputBox
+local localeOutput = CreateFrame("EditBox", "HardcoreCongratsLocaleOutput", panel, "InputBoxTemplate")
+localeOutput:SetPoint("TOPLEFT", randomTitle, "BOTTOMLEFT", 0, -10)
+localeOutput:SetSize(400, 100)
+localeOutput:SetMultiLine(true)
+localeOutput:SetAutoFocus(false)
+localeOutput:SetText(HardcoreCongratsLocalization[GetLocale()]["Awaiting for someone to reach level 60..."] or "Awaiting for someone to reach level 60...")
+localeOutput:SetScript("OnEscapePressed", function(self)
+    self:ClearFocus()
+end)
 
 -- Function to get a message							
 local function getCongratsMessage()
@@ -83,13 +100,13 @@ end
 -- Event handling function						  
 local function onEvent(self, event, msg)
     DEFAULT_CHAT_FRAME:AddMessage("Event Triggered with message: " .. msg)  -- Debug message
-	DEFAULT_CHAT_FRAME:AddMessage("Message byte by byte:")--TEST
-	for i = 1, #msg do--TEST
-		DEFAULT_CHAT_FRAME:AddMessage(string.byte(msg, i))--TEST
-	end--TEST
-	local directPlayerName = string.match(msg, "(.-) a atteint") --TEST
-	DEFAULT_CHAT_FRAME:AddMessage("Direct Extracted Player Name: " .. (directPlayerName or "None detected"))--TEST
-	local localeMessage = HardcoreCongratsLocalization[GetLocale()].alert:gsub(" ", " ")  -- both are non-breaking spaces
+    DEFAULT_CHAT_FRAME:AddMessage("Message byte by byte:") -- TEST
+    for i = 1, #msg do -- TEST
+        DEFAULT_CHAT_FRAME:AddMessage(string.byte(msg, i)) -- TEST
+    end -- TEST
+    local directPlayerName = string.match(msg, "(.-) a atteint") -- TEST
+    DEFAULT_CHAT_FRAME:AddMessage("Direct Extracted Player Name: " .. (directPlayerName or "None detected")) -- TEST
+    local localeMessage = HardcoreCongratsLocalization[GetLocale()].alert:gsub(" ", " ")  -- both are non-breaking spaces
 
     DEFAULT_CHAT_FRAME:AddMessage("Locale Message: " .. (localeMessage or "None detected"))  -- Debug message
     
@@ -99,8 +116,12 @@ local function onEvent(self, event, msg)
     if playerName then
         lastPlayer = playerName
         button:Show()
+        localeOutput:SetText(msg)  -- Update the EditBox with the extracted server message
+    else
+        localeOutput:SetText("Awaiting for someone to reach level 60...")  -- Reset to the placeholder text if not the expected message
     end
 end
+
 
 --[[
 Test Button
