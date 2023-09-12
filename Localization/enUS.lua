@@ -7,5 +7,7 @@ HardcoreCongratsLocalization["enUS"] = {
     ["Detected Locale"] = "Detected Locale:",
     ["Last player to reach 60"] = "Last player to reach 60:",
     ["Choose a congratulation message"] = "Choose a congratulation message:",
-    ["Pick one at random"] = "Pick one at random:"
+    ["Pick one at random"] = "Pick one at random:",
+	["Event server message"] = "Event server message",
+	["Awaiting for someone to reach level 60..."] = "Awaiting for someone to reach level 60..."
 }
