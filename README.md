@@ -1,4 +1,3 @@
-
 # Hardcore Congrats for World of Warcraft
 
 The road to level 60 is a long and perilous one in World of Warcraft Hardcore.
@@ -7,15 +6,29 @@ Those who manage to reach the maximum level deserve a little recognition!
 
 HardcoreCongrats is a WoW add-on that lets you congratulate the valiant warriors who have achieved this achievement.
 
-⚠ This add-on is currently in development anc contains test code. ⚠
+*Keep in mind that lost of player reach level 60 while appearing off-line, so the game won't let you whisper them!*
 
+Here's a little preview of what it looks like :
+![enter image description here](https://media.discordapp.net/attachments/157405815429529601/1151595800888086649/image.png)
 
 ## Features
 
 - Automatically retrieves the names of people reaching level 60
 - Opens a button to send a private message to congratulate the player
-- Choose from one of four pre-recorded messages, or leave it to chance to select one
+- Choose from one of the pre-recorded messages, or leave it to chance to select one
+- **Shift + click** to move the congratulation button where you want it to be
+- **Alt + click** or **Ctrl + click** on the button to remove the player from the congratulate list
+- Automatically remove the player from the congratulate list after a certain amount of time
 - Multi-language support
+- Automatically fetches the server alert message for easy localization
+- /hccongrats to display the add-on information
+
+## Download
+![GitHub all releases](https://img.shields.io/github/downloads/Mouchoir/HardcoreCongrats/total)
+
+Download the .zip from the [latest release](https://github.com/Mouchoir/HardcoreCongrats/releases) or get the add-on from [CurseForge](https://legacy.curseforge.com/wow/addons/hardcore-congrats).
+
+
 
 ## Installation
 
@@ -28,21 +41,17 @@ This can vary depending on your WoW installation.
 
 You can add support for your language by adding a new language file in /Localization/
 
-```lua
-if GetLocale() ~= "YOURLANGUAGECODE" then return end -- Your language code, for example "enUS"
-
-HardcoreCongratsLocalization = HardcoreCongratsLocalization or {}
-
-HardcoreCongratsLocalization["YOURLANGUAGECODE"] = { -- Your language code
-    alert = "^(.+) has reached level 60!", -- Messaged displayed by the server when someone reaches 60. The ^(.+) part is meant to find the player's name.
-    ["Detected Locale"] = "Detected Locale:", -- Displayed in the add-on's options
-    ["Last player to reach 60"] = "Last player to reach 60:" -- Displayed in the add-on's options
-}
-```
+To ease the process, the server message is automatically fetched and displayed in the add-on options panel. This will prevent you from having troubles because of the special characters Blizzard throw in there!
+Just replace the name of the character with REGEX (`(.-)`is used for EN and FR language) and translate the few lines.
 
 Once this is done, save the file in `/Localization/YOURLANGUAGECODE.lua`
-Do not forget to add a line in `HardcoreCongrats.toc` and 
+Do not forget to add a line in `HardcoreCongrats.toc`!
+You can also make a PR or send me the file so I can add your language to the next release.
 
+## Change the messages sent to the players
+
+If you feel like it, you can easily change the list of message sent to players.
+Just edit `local  congratsMessages = {}` in the `HardcoreCongrats.lua`file.
 ## Roadmap
 
 - Ability to congratulate an older character if it hasn't been done
@@ -50,6 +59,9 @@ Do not forget to add a line in `HardcoreCongrats.toc` and
 - Remove the test parts of the code
 - Add more languages
 
+## Special thanks
+
+ - [Tigralt](https://github.com/tigralt/) for your help, patience and amazing beard!
 
 ## License
 
