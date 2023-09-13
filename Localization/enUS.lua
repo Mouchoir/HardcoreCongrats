@@ -22,5 +22,6 @@ HardcoreCongratsLocalization["enUS"] = {
     ["hccongrats reset instruction"] = "/hccongrats reset - Resets the addon to default options.",
     ["Hold shift instruction"] = "Hold shift to move the button.",
     ["Alt or Ctrl + click instruction"] = "Alt or Ctrl + click on the button to remove the player without congratulating.",
-    ["Reset information"] = "HardcoreCongrats settings have been reset to default."
+    ["Reset information"] = "HardcoreCongrats settings have been reset to default.",
+    ["hccongrats debug button"] = "/hccongrats debug - Displays the debug button.",
 }

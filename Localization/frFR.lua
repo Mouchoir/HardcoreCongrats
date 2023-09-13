@@ -22,5 +22,6 @@ HardcoreCongratsLocalization["frFR"] = {
     ["hccongrats reset instruction"] = "/hccongrats reset - Réinitialise l'addon aux options par défaut.",
     ["Hold shift instruction"] = "Maintenez shift pour déplacer le bouton.",
     ["Alt or Ctrl + click instruction"] = "Alt ou Ctrl + clic sur le bouton pour retirer le joueur sans le féliciter.",
-    ["Reset information"] = "Les options d'HardcoreCongrats ont été réinitialisées."
+    ["Reset information"] = "Les options d'HardcoreCongrats ont été réinitialisées.",
+    ["hccongrats debug button"] = "/hccongrats debug - Affiche le bouton de debug.",
 }

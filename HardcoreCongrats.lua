@@ -143,7 +143,19 @@ end)
 
 -- Create playerNameLabel
 playerNameLabel = dragFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-playerNameLabel:SetPoint("CENTER", dragFrame, "TOP", 0, 15)
+playerNameLabel:SetPoint("CENTER", dragFrame, "TOP", 0, 5)
+playerNameLabel:EnableMouse(true)
+playerNameLabel:SetScript("OnMouseDown", function (self, button)
+    if button == "LeftButton" and IsShiftKeyDown() then
+        self:GetParent():StartMoving()
+    end
+end)
+playerNameLabel:SetScript("OnMouseUp", function(self)
+    self:GetParent():StopMovingOrSizing()
+    -- Save the position for future sessions
+    local point, _, relativePoint, xOfs, yOfs = self:GetParent():GetPoint()
+    HardcoreCongratsDB.dragFramePosition = {point, relativePoint, xOfs, yOfs}
+end)
 
 
 -- Restore the saved position of the drag frame
@@ -375,6 +387,53 @@ C_Timer.NewTicker(10, function()
     updateButtonAndNameLabelVisibility()
 end)
 
+-- START OF DEBUG BUTTON LOGIC: This section is meant for debugging
+local function contains(table, value)
+    for _, v in ipairs(table) do
+      if v.name == value then 
+        return true
+      end
+    end
+    
+    return false
+end
+local function getRandomPlayer()
+    -- Returns a random player name								  
+    local names = {
+        "Aelzaeoria", "Bromazeali", "Thandazeazearel", "Elowazeazynn", "Kazeazordric", 
+        "Maeazeazlis", "Taazelindra", "Gaazeromlor", "Laelazeith", "Nordazeran", 
+        "Vaelazeora", "Thoazerdric", "Elaazendra", "Rhalgazear", "Loriazenell"
+    }
+    return names[math.random(#names)]
+end
+local function getUniqueRandomPlayer()
+    local playerName = getRandomPlayer()
+
+    while contains(pendingPlayers, playerName) do
+        playerName = getRandomPlayer()
+    end
+
+    return playerName
+end
+
+-- DEBUG Button Creation
+local debugButton = CreateFrame("Button", nil, UIParent, "UIPanelButtonTemplate")
+debugButton:SetSize(100, 30)
+debugButton:SetPoint("CENTER", 0, 350)
+debugButton:SetText("DEBUG")
+debugButton:Hide()
+
+debugButton:SetScript("OnClick", function()
+    -- Get random player name                            
+    local playerName = getUniqueRandomPlayer()
+    -- Format mock event based on the locale
+    local msg = playerName .. HardcoreCongratsLocalization[GetLocale()].alert:sub(5)
+    -- Trigger onEvent() with mock event                                       
+    onEvent(nil, nil, msg)
+end)
+-- END OF DEBUG BUTTON LOGIC
+
+
 -- START OF THE SLASH COMMAND
 -- Register a slash command
 SLASH_HARDWARECONGRATS1 = "/hccongrats"
@@ -393,7 +452,14 @@ SlashCmdList["HARDWARECONGRATS"] = function(msg)
     elseif msg == "reset" then
         resetSettingsToDefault()
         InterfaceOptionsFrame:Hide()  -- This line ensures the options panel doesn't open
+    elseif msg == "debug" then
+        if debugButton:IsShown() then
+            debugButton:Hide()
+        else
+            debugButton:Show()
+        end
     else
+        DEFAULT_CHAT_FRAME:AddMessage(HardcoreCongratsLocalization[GetLocale()]["hccongrats debug button"] or "/hccongrats debug - Displays the debug button.")
         DEFAULT_CHAT_FRAME:AddMessage(HardcoreCongratsLocalization[GetLocale()]["hccongrats list instruction"] or "/hccongrats list - Displays list of players awaiting congratulations.")
         DEFAULT_CHAT_FRAME:AddMessage(HardcoreCongratsLocalization[GetLocale()]["hccongrats reset instruction"] or "/hccongrats reset - Resets the addon to default options.")
         DEFAULT_CHAT_FRAME:AddMessage(HardcoreCongratsLocalization[GetLocale()]["Hold shift instruction"] or "Hold shift to move the button.")
