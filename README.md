@@ -21,6 +21,8 @@ Here's a little preview of what it looks like :
 - **Shift + click** to move the congratulation button where you want it to be
 - **Alt + click** or **Ctrl + click** on the button to remove the player from the congratulate list
 - Automatically remove the player from the congratulate list after a certain amount of time
+- **NEW:** Use a preset message of your own 
+- **NEW:** Possibility to open whisper chatbox and let you type the message you want
 - Multi-language support
 - Automatically fetches the server alert message for easy localization
 - /hccongrats to display the add-on information
@@ -67,6 +69,8 @@ Just edit `local  congratsMessages = {}` in the `HardcoreCongrats.lua` file.
 ## Special thanks
 
  - [Tigralt](https://github.com/tigralt/) for your help, patience and amazing beard!
+ - [Tignus](https://github.com/Tignus) who claims he did a better job than Tigralt
+ - Anyone who can clean this mess of a code
 
 ## License
 
