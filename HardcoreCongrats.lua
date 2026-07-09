@@ -383,7 +383,8 @@ local function sendCongratulation(playerName)
         local message = getCongratsMessage()
         SendChatMessage(message, "WHISPER", nil, playerName)
         if isDebug() then
-            DEFAULT_CHAT_FRAME:AddMessage("Message sent: " .. message)
+            DEFAULT_CHAT_FRAME:AddMessage(
+                string.format(L()["Message sent"] or "Message sent: %s", message))
         end
     else
         ChatFrame_OpenChat("/whisper " .. playerName .. " ")
@@ -575,7 +576,7 @@ panel:SetScript("OnShow", function()
 
     -- Update locale values
     detectedLocaleValue:SetText(GetLocale())
-    lastPlayerValue:SetText(lastPlayer or "None")
+    lastPlayerValue:SetText(lastPlayer or (L()["None"] or "None"))
 
     -- Update the checkboxes based on the saved state
     if HardcoreCongratsDB.messageType == messageTypeEnum.RANDOM then

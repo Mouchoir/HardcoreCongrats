@@ -27,4 +27,8 @@ HardcoreCongratsLocalization["frFR"] = {
     ["Reset information"] = "Les options d'HardcoreCongrats ont été réinitialisées.",
     ["hccongrats debug button"] = "/hccongrats debug - Affiche le bouton de debug.",
     ["Player skipped"] = "%s a été ignoré.",
+    ["Seconds"] = "sec.",
+    ["No players awaiting"] = "Aucun joueur en attente de félicitations.",
+    ["None"] = "Aucun",
+    ["Message sent"] = "Message envoyé : %s",
 }
