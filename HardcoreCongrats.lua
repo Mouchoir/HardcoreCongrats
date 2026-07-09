@@ -414,21 +414,25 @@ button:SetText(L()["Congratulate"] or
                    "Congratulate!")
 button:Show()
 button:SetScript("OnClick", function(self, buttonName)
-    if #pendingPlayers > 0 then
-        lastPlayer = pendingPlayers[#pendingPlayers].name
-        if buttonName == "LeftButton" then
-            -- Alt+Click or Ctrl+Click removes the player from the list of players to congratulate
-            if IsControlKeyDown() or IsAltKeyDown() then
-                table.remove(pendingPlayers)
-                -- Leftclick congratulates the player and removes his character's name
-            else
-                sendCongratulation(lastPlayer)
-                table.remove(pendingPlayers)
-            end
-        end
-        updateButtonAndNameLabelVisibility()
-        HardcoreCongratsDB.instructionShown = false
+    if buttonName ~= "LeftButton" then return end
+    if #pendingPlayers == 0 then return end
+
+    local playerName = pendingPlayers[#pendingPlayers].name
+    lastPlayer = playerName
+
+    if IsControlKeyDown() or IsAltKeyDown() then
+        -- Alt+Click or Ctrl+Click skips the player without congratulating.
+        table.remove(pendingPlayers)
+        local template = L()["Player skipped"] or "%s has been skipped."
+        DEFAULT_CHAT_FRAME:AddMessage(string.format(template, playerName))
+    else
+        -- Left click congratulates the player and removes their name.
+        sendCongratulation(playerName)
+        table.remove(pendingPlayers)
     end
+
+    updateButtonAndNameLabelVisibility()
+    HardcoreCongratsDB.instructionShown = false
 end)
 
 -- Register for the chat message event									  

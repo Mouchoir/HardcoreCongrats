@@ -25,4 +25,5 @@ HardcoreCongratsLocalization["enUS"] = {
     ["Alt or Ctrl + click instruction"] = "Alt or Ctrl + click on the button to remove the player without congratulating.",
     ["Reset information"] = "HardcoreCongrats settings have been reset to default.",
     ["hccongrats debug button"] = "/hccongrats debug - Displays the debug button.",
+    ["Player skipped"] = "%s has been skipped.",
 }
