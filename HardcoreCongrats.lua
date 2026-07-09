@@ -4,6 +4,14 @@ local congratsMessages = {
     "Another hero survived ;-)"
 }
 
+-- Localization accessor: returns the table for the active locale, falling back
+-- to enUS so an unsupported client language never crashes the addon.
+local function L()
+    HardcoreCongratsLocalization = HardcoreCongratsLocalization or {}
+    return HardcoreCongratsLocalization[GetLocale()] or
+               HardcoreCongratsLocalization["enUS"] or {}
+end
+
 local messageTypeEnum = {}
 messageTypeEnum.SELECTED = 1
 messageTypeEnum.RANDOM = 2
@@ -13,10 +21,10 @@ messageTypeEnum.WHISPER = 4
 local function resetDB()
     HardcoreCongratsDB = {
         selectedMessage = congratsMessages[1],
-        customMessage = HardcoreCongratsLocalization[GetLocale()]["Custom message"] or
+        customMessage = L()["Custom message"] or
             "Type your custom message here",
         messageType = messageTypeEnum.SELECTED,
-        serverMessage = HardcoreCongratsLocalization[GetLocale()]["Awaiting for someone to reach level 60..."] or
+        serverMessage = L()["Awaiting for someone to reach level 60..."] or
             "Awaiting for someone to reach level 60...",
         memoryDuration = 10, -- Default to 10 seconds
         dragFramePosition = {"CENTER", UIParent, "CENTER", 0, 0},
@@ -28,21 +36,33 @@ end
 if not HardcoreCongratsDB then resetDB() end
 
 -- Start of debug function
-local function isDebug() return _G["HardcoreCongratsDebugButton"]:IsVisible() end
+local function isDebug()
+    local btn = _G["HardcoreCongratsDebugButton"]
+    return btn ~= nil and btn:IsVisible()
+end
 
 local button
 local pendingPlayers = {} -- Store players that will be congratulated
 local lastPlayer -- This variable will store the name of the last player to reach level 60
 local playerNameLabel
 
--- Option tab					  
-local optionTab = CreateFrame("Frame", "HardcoreCongratsOptionTab",
-                              InterfaceOptionsFramePanelContainer)
+local function registerOptionsPanel(panel)
+    if Settings and Settings.RegisterCanvasLayoutCategory and
+        Settings.RegisterAddOnCategory then
+        local category = Settings.RegisterCanvasLayoutCategory(panel,
+                                                               "HardcoreCongrats")
+        category.ID = "HardcoreCongrats"
+        Settings.RegisterAddOnCategory(category)
+    elseif InterfaceOptions_AddCategory then
+        InterfaceOptions_AddCategory(panel)
+    end
+end
+
+-- Option tab
+local optionTab = CreateFrame("Frame", "HardcoreCongratsOptionTab")
 optionTab.name = "HardcoreCongrats"
-optionTab:SetAllPoints(InterfaceOptionsFramePanelContainer);
-optionTab:SetSize(InterfaceOptionsFramePanelContainer:GetWidth(),
-                  InterfaceOptionsFramePanelContainer:GetHeight());
-InterfaceOptions_AddCategory(optionTab)
+optionTab:SetSize(600, 700);
+registerOptionsPanel(optionTab)
 
 -- ScrollFrame
 optionTab.scrollframe = CreateFrame("ScrollFrame",
@@ -79,7 +99,7 @@ local detectedLocaleLabel = panel:CreateFontString(nil, "ARTWORK",
                                                    "GameFontNormal")
 detectedLocaleLabel:SetPoint("TOPLEFT", 16, -16)
 detectedLocaleLabel:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Detected Locale"] or
+    L()["Detected Locale"] or
         "Detected Locale:")
 
 local detectedLocaleValue = panel:CreateFontString(
@@ -92,7 +112,7 @@ detectedLocaleValue:SetPoint("TOPLEFT", detectedLocaleLabel, "BOTTOMLEFT", 0,
 local lastPlayerLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 lastPlayerLabel:SetPoint("TOPLEFT", detectedLocaleValue, "BOTTOMLEFT", 0, -20)
 lastPlayerLabel:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Last player to reach 60"] or
+    L()["Last player to reach 60"] or
         "Last player to reach 60:")
 
 local lastPlayerValue = panel:CreateFontString(
@@ -104,14 +124,14 @@ lastPlayerValue:SetPoint("TOPLEFT", lastPlayerLabel, "BOTTOMLEFT", 0, -10)
 local messageTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 messageTitle:SetPoint("TOPLEFT", lastPlayerValue, "BOTTOMLEFT", 0, -20)
 messageTitle:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Choose a congratulation message"] or
+    L()["Choose a congratulation message"] or
         "Choose a congratulation message:")
 
 local randomTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 randomTitle:SetPoint("TOPLEFT", messageTitle, "BOTTOMLEFT", 0,
                      -22 * (#congratsMessages + 1) + 9)
 randomTitle:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Pick one at random"] or
+    L()["Pick one at random"] or
         "Pick one at random:")
 
 local randomCheckbox = CreateFrame("CheckButton",
@@ -119,17 +139,17 @@ local randomCheckbox = CreateFrame("CheckButton",
                                    "ChatConfigCheckButtonTemplate")
 randomCheckbox:SetPoint("TOPLEFT", randomTitle, "BOTTOMLEFT", 0, -10)
 randomCheckbox.tooltip =
-    HardcoreCongratsLocalization[GetLocale()]["Randomly pick a message"] or
+    L()["Randomly pick a message"] or
         "Randomly pick a message"
 getglobal(randomCheckbox:GetName() .. 'Text'):SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Random"] or "Random")
+    L()["Random"] or "Random")
 getglobal(randomCheckbox:GetName() .. 'Text'):SetPoint("LEFT", randomCheckbox,
                                                        "RIGHT", 5, 0)
 
 local customizeTitle = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 customizeTitle:SetPoint("TOPLEFT", randomCheckbox, "BOTTOMLEFT", 0, -20)
 customizeTitle:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Customize text"] or
+    L()["Customize text"] or
         "Define a customized text to be sent")
 
 -- Checkbox for Custom Message
@@ -147,7 +167,7 @@ customMessageEditBox:SetPoint("LEFT", customMessageCheckbox, "RIGHT", 10, 0) -- 
 customMessageEditBox:SetSize(400, 30) -- Adjust dimensions as necessary
 customMessageEditBox:SetAutoFocus(false)
 customMessageEditBox:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Custom message"] or
+    L()["Custom message"] or
         "Type your custom message here")
 customMessageEditBox:SetFrameStrata("HIGH")
 customMessageEditBox:SetScript("OnEscapePressed",
@@ -168,7 +188,7 @@ local openWhisperCheckbox = CreateFrame("CheckButton",
 openWhisperCheckbox:SetPoint("TOPLEFT", customMessageCheckbox, "BOTTOMLEFT", 0,
                              0)
 getglobal(openWhisperCheckbox:GetName() .. 'Text'):SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Open whisper"] or
+    L()["Open whisper"] or
         "Whisper to player (nothing is sent)")
 getglobal(openWhisperCheckbox:GetName() .. 'Text'):SetPoint("LEFT",
                                                             openWhisperCheckbox,
@@ -178,7 +198,7 @@ local rememberTimeTitle = panel:CreateFontString(nil, "ARTWORK",
                                                  "GameFontNormal")
 rememberTimeTitle:SetPoint("TOPLEFT", openWhisperCheckbox, "BOTTOMLEFT", 0, -20)
 rememberTimeTitle:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Remember"] or
+    L()["Remember"] or
         "Remember a player for:")
 
 -- Dropdown for memory duration
@@ -191,14 +211,14 @@ memoryDurationDropdown:SetPoint("TOPLEFT", rememberTimeTitle, "BOTTOMLEFT", -16,
 UIDropDownMenu_SetWidth(memoryDurationDropdown, 150)
 UIDropDownMenu_SetText(memoryDurationDropdown,
                        (HardcoreCongratsDB.memoryDuration) .. " " ..
-                           (HardcoreCongratsLocalization[GetLocale()]["Seconds"] or
+                           (L()["Seconds"] or
                                "sec."))
 
 UIDropDownMenu_Initialize(memoryDurationDropdown, function(self, level)
     for _, duration in ipairs(memoryDurations) do
         local info = UIDropDownMenu_CreateInfo()
         info.text = (duration) .. " " ..
-                        (HardcoreCongratsLocalization[GetLocale()]["Seconds"] or
+                        (L()["Seconds"] or
                             "sec.")
         info.value = duration
         info.func = function()
@@ -214,7 +234,7 @@ local serverMessageTitle = panel:CreateFontString(nil, "ARTWORK",
 serverMessageTitle:SetPoint("TOPLEFT", memoryDurationDropdown, "BOTTOMLEFT", 16,
                             -20)
 serverMessageTitle:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Event server message"] or
+    L()["Event server message"] or
         "Event server message")
 
 -- Create an InputBox
@@ -225,7 +245,7 @@ localeOutput:SetSize(400, 100)
 localeOutput:SetMultiLine(true)
 localeOutput:SetAutoFocus(false)
 localeOutput:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Awaiting for someone to reach level 60..."] or
+    L()["Awaiting for someone to reach level 60..."] or
         "Awaiting for someone to reach level 60...")
 localeOutput:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 
@@ -237,7 +257,7 @@ localizationNoteLabel:SetWordWrap(true) -- Enable word wrapping
 localizationNoteLabel:SetJustifyH("LEFT") -- Align text to the left
 localizationNoteLabel:SetPoint("TOPLEFT", localeOutput, "BOTTOMLEFT", 0, -20)
 localizationNoteLabel:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Localization Note"] or
+    L()["Localization Note"] or
         "Copy/paste this to create the localization file in your own language since Blizzard sometimes uses special characters such as non-breakable spaces. Then replace the character's name with (.-).")
 
 -- Create a frame to group the button and the player name label
@@ -306,7 +326,7 @@ local function resetSettingsToDefault()
     HardcoreCongratsDB.dragFramePosition = {point, relativePoint, xOfs, yOfs}
 
     DEFAULT_CHAT_FRAME:AddMessage(
-        HardcoreCongratsLocalization[GetLocale()]["Reset information"] or
+        L()["Reset information"] or
             "HardcoreCongrats settings have been reset to default.")
 end
 
@@ -315,7 +335,7 @@ local instructionLabel = dragFrame:CreateFontString(nil, "OVERLAY",
                                                     "GameFontNormalSmall")
 instructionLabel:SetPoint("CENTER", dragFrame, "CENTER", 0, -35)
 instructionLabel:SetText(
-    HardcoreCongratsLocalization[GetLocale()]["Shift+click instruction"] or
+    L()["Shift+click instruction"] or
         "Shift+click to move\nAlt or Ctrl+click to remove player")
 instructionLabel:Hide()
 
@@ -372,7 +392,7 @@ end
 
 local function onEvent(self, event, msg)
 
-    local localeMessage = HardcoreCongratsLocalization[GetLocale()].alert
+    local localeMessage = L().alert
     local playerName = string.match(msg, localeMessage)
 
     if playerName and playerName ~= "" then
@@ -390,7 +410,7 @@ button = CreateFrame("Button", "HardcoreCongratsButton", dragFrame,
                      "UIPanelButtonTemplate")
 button:SetPoint("CENTER", dragFrame, "CENTER")
 button:SetSize(150, 30)
-button:SetText(HardcoreCongratsLocalization[GetLocale()]["Congratulate"] or
+button:SetText(L()["Congratulate"] or
                    "Congratulate!")
 button:Show()
 button:SetScript("OnClick", function(self, buttonName)
@@ -520,16 +540,35 @@ end
 randomCheckbox:SetChecked(HardcoreCongratsDB.messageType ==
                               messageTypeEnum.RANDOM)
 
--- Calculating panel height
-local panelHeight = detectedLocaleLabel:GetTop() -
-                        localizationNoteLabel:GetBottom() + 30 -- Added a margin of 30 for safety
-panel:SetSize(optionTab.scrollframe:GetWidth(), panelHeight);
-if panel:GetHeight() <= optionTab:GetHeight() then optionTab.scrollbar:Hide() end
+-- Calculating panel height.
+-- GetTop()/GetBottom() only return valid coordinates once the frame has been
+-- laid out on screen. With the modern Settings API the options panel is hidden
+-- at load, so we set a safe fallback size now and recompute the real height the
+-- first time the panel is shown (see OnShow below).
+panel:SetSize(optionTab.scrollframe:GetWidth() or 600, 700)
+
+local function updatePanelHeight()
+    local top = detectedLocaleLabel:GetTop()
+    local bottom = localizationNoteLabel:GetBottom()
+    if not (top and bottom) then return end -- Not laid out yet, try again later
+
+    local panelHeight = top - bottom + 30 -- Added a margin of 30 for safety
+    panel:SetSize(optionTab.scrollframe:GetWidth(), panelHeight)
+    if panel:GetHeight() <= optionTab:GetHeight() then
+        optionTab.scrollbar:Hide()
+    else
+        optionTab.scrollbar:Show()
+    end
+end
 
 -- Set the EditBox text based on the saved server message
 localeOutput:SetText(HardcoreCongratsDB.serverMessage)
 
 panel:SetScript("OnShow", function()
+    -- Now that the panel is visible its frame rects are valid, so we can
+    -- compute the real scroll height.
+    updatePanelHeight()
+
     -- Update locale values
     detectedLocaleValue:SetText(GetLocale())
     lastPlayerValue:SetText(lastPlayer or "None")
@@ -583,7 +622,7 @@ panel:SetScript("OnShow", function()
     -- Update dropdown list
     UIDropDownMenu_SetText(memoryDurationDropdown,
                            (HardcoreCongratsDB.memoryDuration) .. " " ..
-                               (HardcoreCongratsLocalization[GetLocale()]["Seconds"] or
+                               (L()["Seconds"] or
                                    "sec."))
 
     -- Update the EditBox text based on the saved server message
@@ -634,7 +673,7 @@ debugButton:SetScript("OnClick", function()
     local playerName = getUniqueRandomPlayer()
     -- Format mock event based on the locale
     local msg = playerName ..
-                    HardcoreCongratsLocalization[GetLocale()].alert:sub(5)
+                    L().alert:sub(5)
     -- Trigger onEvent() with mock event                                       
     onEvent(nil, nil, msg)
 end)
@@ -648,20 +687,22 @@ SlashCmdList["HARDWARECONGRATS"] = function(msg)
         -- Check if there are any players in the list
         if #pendingPlayers == 0 then
             DEFAULT_CHAT_FRAME:AddMessage(
-                HardcoreCongratsLocalization[GetLocale()]["No players awaiting"] or
+                L()["No players awaiting"] or
                     "No players are awaiting congratulations.")
             return
         end
         -- Display each player that is awaiting congratulations
         DEFAULT_CHAT_FRAME:AddMessage(
-            HardcoreCongratsLocalization[GetLocale()]["Players awaiting"] or
+            L()["Players awaiting"] or
                 "Players awaiting congratulations:")
         for _, playerInfo in ipairs(pendingPlayers) do
             DEFAULT_CHAT_FRAME:AddMessage(playerInfo.name)
         end
     elseif msg == "reset" then
         resetSettingsToDefault()
-        InterfaceOptionsFrame:Hide() -- This line ensures the options panel doesn't open
+        if InterfaceOptionsFrame then
+            InterfaceOptionsFrame:Hide() -- This line ensures the options panel doesn't open
+        end
     elseif msg == "debug" then
         if debugButton:IsShown() then
             debugButton:Hide()
@@ -670,19 +711,19 @@ SlashCmdList["HARDWARECONGRATS"] = function(msg)
         end
     else
         DEFAULT_CHAT_FRAME:AddMessage(
-            HardcoreCongratsLocalization[GetLocale()]["hccongrats debug button"] or
+            L()["hccongrats debug button"] or
                 "/hccongrats debug - Displays the debug button.")
         DEFAULT_CHAT_FRAME:AddMessage(
-            HardcoreCongratsLocalization[GetLocale()]["hccongrats list instruction"] or
+            L()["hccongrats list instruction"] or
                 "/hccongrats list - Displays list of players awaiting congratulations.")
         DEFAULT_CHAT_FRAME:AddMessage(
-            HardcoreCongratsLocalization[GetLocale()]["hccongrats reset instruction"] or
+            L()["hccongrats reset instruction"] or
                 "/hccongrats reset - Resets the addon to default options.")
         DEFAULT_CHAT_FRAME:AddMessage(
-            HardcoreCongratsLocalization[GetLocale()]["Hold shift instruction"] or
+            L()["Hold shift instruction"] or
                 "Hold shift to move the button.")
         DEFAULT_CHAT_FRAME:AddMessage(
-            HardcoreCongratsLocalization[GetLocale()]["Alt or Ctrl + click instruction"] or
+            L()["Alt or Ctrl + click instruction"] or
                 "Alt or Ctrl + click on the button to remove the player without congratulating.")
 
     end

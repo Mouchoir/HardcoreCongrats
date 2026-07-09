@@ -1,5 +1,4 @@
-if GetLocale() ~= "enUS" then return end
-
+-- enUS always loads as the fallback base for every client locale.
 HardcoreCongratsLocalization = HardcoreCongratsLocalization or {}
 
 HardcoreCongratsLocalization["enUS"] = {
