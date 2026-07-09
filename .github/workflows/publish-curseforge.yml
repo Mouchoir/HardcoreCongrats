@@ -37,10 +37,12 @@ jobs:
         id: release
         shell: bash
         run: |
+          # Write the changelog outside the workspace so the checkout step below
+          # (which cleans the working directory) does not delete it.
           if [[ "${{ github.event_name }}" == "release" ]]; then
             tag="$(jq -r '.release.tag_name' "$GITHUB_EVENT_PATH")"
             prerelease="$(jq -r '.release.prerelease' "$GITHUB_EVENT_PATH")"
-            jq -r '.release.body // ""' "$GITHUB_EVENT_PATH" > CHANGELOG.md
+            jq -r '.release.body // ""' "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/CHANGELOG.md"
 
             if [[ "$prerelease" == "true" ]]; then
               release_type="beta"
@@ -50,7 +52,7 @@ jobs:
           else
             tag="${{ inputs.tag }}"
             release_type="${{ inputs.release_type }}"
-            printf 'Manual CurseForge upload for %s\n' "$tag" > CHANGELOG.md
+            printf 'Manual CurseForge upload for %s\n' "$tag" > "$RUNNER_TEMP/CHANGELOG.md"
           fi
 
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
@@ -79,7 +81,7 @@ jobs:
         shell: bash
         run: |
           jq -n \
-            --rawfile changelog CHANGELOG.md \
+            --rawfile changelog "$RUNNER_TEMP/CHANGELOG.md" \
             --arg displayName "${ADDON_NAME} ${{ steps.release.outputs.tag }}" \
             --arg releaseType "${{ steps.release.outputs.release_type }}" \
             '{
