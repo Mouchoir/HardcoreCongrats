@@ -1,0 +1,106 @@
+name: Publish to CurseForge
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to package and upload
+        required: true
+        type: string
+      release_type:
+        description: CurseForge release type
+        required: true
+        default: release
+        type: choice
+        options:
+          - release
+          - beta
+          - alpha
+
+permissions:
+  contents: read
+
+env:
+  ADDON_NAME: HardcoreCongrats
+  CURSEFORGE_BASE_URL: https://wow.curseforge.com
+  CURSEFORGE_PROJECT_ID: "912849"
+
+jobs:
+  publish:
+    name: Upload addon package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve release metadata
+        id: release
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            tag="$(jq -r '.release.tag_name' "$GITHUB_EVENT_PATH")"
+            prerelease="$(jq -r '.release.prerelease' "$GITHUB_EVENT_PATH")"
+            jq -r '.release.body // ""' "$GITHUB_EVENT_PATH" > CHANGELOG.md
+
+            if [[ "$prerelease" == "true" ]]; then
+              release_type="beta"
+            else
+              release_type="release"
+            fi
+          else
+            tag="${{ inputs.tag }}"
+            release_type="${{ inputs.release_type }}"
+            printf 'Manual CurseForge upload for %s\n' "$tag" > CHANGELOG.md
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "release_type=$release_type" >> "$GITHUB_OUTPUT"
+
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+
+      - name: Build addon zip
+        shell: bash
+        run: |
+          rm -rf dist
+          mkdir -p "dist/${ADDON_NAME}"
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='dist/' \
+            --exclude='.gitignore' \
+            ./ "dist/${ADDON_NAME}/"
+          cd dist
+          zip -r "${ADDON_NAME}-${{ steps.release.outputs.tag }}.zip" "${ADDON_NAME}"
+
+      - name: Prepare CurseForge metadata
+        shell: bash
+        run: |
+          jq -n \
+            --rawfile changelog CHANGELOG.md \
+            --arg displayName "${ADDON_NAME} ${{ steps.release.outputs.tag }}" \
+            --arg releaseType "${{ steps.release.outputs.release_type }}" \
+            '{
+              changelog: $changelog,
+              changelogType: "markdown",
+              displayName: $displayName,
+              releaseType: $releaseType
+            }' > metadata.json
+
+      - name: Upload to CurseForge
+        shell: bash
+        env:
+          CURSEFORGE_API_TOKEN: ${{ secrets.CURSEFORGE_API_TOKEN }}
+        run: |
+          if [[ -z "$CURSEFORGE_API_TOKEN" ]]; then
+            echo "Missing CURSEFORGE_API_TOKEN repository secret." >&2
+            exit 1
+          fi
+
+          curl --fail-with-body \
+            --header "X-Api-Token: ${CURSEFORGE_API_TOKEN}" \
+            --form "metadata=<metadata.json;type=application/json" \
+            --form "file=@dist/${ADDON_NAME}-${{ steps.release.outputs.tag }}.zip" \
+            "${CURSEFORGE_BASE_URL}/api/projects/${CURSEFORGE_PROJECT_ID}/upload-file"
