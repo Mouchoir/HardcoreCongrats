@@ -414,15 +414,18 @@ button:SetSize(150, 30)
 button:SetText(L()["Congratulate"] or
                    "Congratulate!")
 button:Show()
+-- Register both buttons so right-click also fires OnClick. The default only
+-- registers left-clicks, which is why right-click on the button did nothing.
+button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 button:SetScript("OnClick", function(self, buttonName)
-    if buttonName ~= "LeftButton" then return end
+    if buttonName ~= "LeftButton" and buttonName ~= "RightButton" then return end
     if #pendingPlayers == 0 then return end
 
     local playerName = pendingPlayers[#pendingPlayers].name
     lastPlayer = playerName
 
-    if IsControlKeyDown() or IsAltKeyDown() then
-        -- Alt+Click or Ctrl+Click skips the player without congratulating.
+    if buttonName == "RightButton" or IsControlKeyDown() or IsAltKeyDown() then
+        -- Right-click / Alt+Click / Ctrl+Click skips the player without congratulating.
         table.remove(pendingPlayers)
         local template = L()["Player skipped"] or "%s has been skipped."
         DEFAULT_CHAT_FRAME:AddMessage(string.format(template, playerName))

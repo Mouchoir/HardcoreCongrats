@@ -1,6 +1,6 @@
-## Interface: 11508
+## Interface: 11509
 ## Title: Hardcore Congrats
-## Version: 2.2
+## Version: 2.3
 ## Author: Mouchoir
 ## Notes: Automatically congratulate Hardcore players reaching level 60.
 ## SavedVariables: HardcoreCongratsDB
