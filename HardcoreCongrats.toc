@@ -1,6 +1,7 @@
 ## Interface: 11509
 ## Title: Hardcore Congrats
 ## Version: 2.3
+## X-Wago-ID: ZKbq7d61
 ## Author: Mouchoir
 ## Notes: Automatically congratulate Hardcore players reaching level 60.
 ## SavedVariables: HardcoreCongratsDB
